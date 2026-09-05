@@ -1,0 +1,66 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --radius: 0.625rem;
+}
+
+html {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  margin: 0;
+  background-color: #B8C0FF;
+  color: #660f33;
+  font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New', monospace;
+}
+
+@layer base {
+  * {
+    border-color: rgba(255, 244, 232, 0.2);
+  }
+}
+
+/* ---- Scan sparkle animation ---- */
+@keyframes twinkle {
+  0%, 100% { opacity: 0.2; transform: scale(0.6) rotate(0deg); filter: drop-shadow(0 0 2px rgba(255, 244, 232, 0.4)); }
+  50% { opacity: 1; transform: scale(1.1) rotate(180deg); filter: drop-shadow(0 0 8px rgba(255, 244, 232, 0.95)); }
+}
+
+@keyframes float-star {
+  0% { transform: translate(0, 0); }
+  25% { transform: translate(6px, -8px); }
+  50% { transform: translate(-4px, -12px); }
+  75% { transform: translate(-8px, 4px); }
+  100% { transform: translate(0, 0); }
+}
+
+.star-twinkle {
+  animation: twinkle 2s ease-in-out infinite, float-star 6s ease-in-out infinite;
+}
+
+/* ---- Draw reveal (line art) ---- */
+@keyframes draw-reveal {
+  0% { -webkit-mask-position: 0% 0%; mask-position: 0% 0%; }
+  75% { -webkit-mask-position: 0% 100%; mask-position: 0% 100%; }
+  100% { -webkit-mask-position: 0% 100%; mask-position: 0% 100%; }
+}
+
+.animate-draw {
+  -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 45%, transparent 55%, transparent 100%);
+  mask-image: linear-gradient(to bottom, #000 0%, #000 45%, transparent 55%, transparent 100%);
+  -webkit-mask-size: 100% 220%;
+  mask-size: 100% 220%;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: 0% 0%;
+  mask-position: 0% 0%;
+  animation: draw-reveal 5s ease-in-out infinite;
+}
