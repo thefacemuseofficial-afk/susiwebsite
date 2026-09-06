@@ -3,7 +3,10 @@ import { useNavigate } from "react-router-dom";
 import { Camera, Upload, X, Star } from "lucide-react";
 import { Logo } from "@/components/Logo";
 import { Button } from "@/components/ui/button";
-import { analyzeSkinMock } from "@/lib/mockServices";
+import { analyzeSkin } from "@/lib/mockServices";
+import { useAuth } from "@/lib/mockAuth";
+import { api } from "@/lib/api";
+import { resizeDataUrl } from "@/lib/image";
 import { saveSkinProfile, type SkinProfile } from "@/lib/skinProfile";
 
 const cuteLoadingMessages = [
@@ -27,6 +30,7 @@ const SPARKLES = [
 
 export default function Scan() {
   const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [analyzing, setAnalyzing] = useState(false);
@@ -52,7 +56,10 @@ export default function Scan() {
     if (!file) return;
     setError(null);
     const reader = new FileReader();
-    reader.onload = () => setPreview(reader.result as string);
+    reader.onload = async () => {
+      const resized = await resizeDataUrl(reader.result as string, 1024, 0.82);
+      setPreview(resized);
+    };
     reader.readAsDataURL(file);
   };
 
@@ -65,24 +72,34 @@ export default function Scan() {
     setAnalyzing(true);
     setError(null);
     try {
-      const data = await analyzeSkinMock(preview);
+      const data = await analyzeSkin(preview);
       const profile: SkinProfile = {
         fitzpatrick: data.fitzpatrick,
         undertone: data.undertone,
         skinHex: data.skinHex,
         label: data.label,
-        eyeColour: data.eyeColour,
+        eyeColour: data.eyeColour || undefined,
         selfieDataUrl: preview,
         timestamp: Date.now(),
         lighting: data.lighting,
         confidence: data.confidence,
         lightingNotes: data.lightingNotes,
-        faceShape: data.faceShape,
+        faceShape: data.faceShape || undefined,
       };
       saveSkinProfile(profile);
+      if (isAuthenticated) {
+        try {
+          await api.post("/profiles", {
+            fitzpatrick: data.fitzpatrick, undertone: data.undertone, skinHex: data.skinHex,
+            label: data.label, eyeColour: data.eyeColour || null, faceShape: data.faceShape || null,
+            lighting: data.lighting, confidence: data.confidence, lightingNotes: data.lightingNotes,
+          });
+        } catch { /* best effort */ }
+      }
       navigate("/results");
-    } catch {
-      setError("Couldn't load your matches. Please try again.");
+    } catch (err: any) {
+      const detail = err?.response?.data?.detail;
+      setError(detail || "Couldn't load your matches. Please try again.");
     } finally {
       setAnalyzing(false);
     }

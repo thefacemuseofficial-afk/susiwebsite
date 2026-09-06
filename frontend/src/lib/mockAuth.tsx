@@ -1,99 +1,99 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from "react";
+import { api, setToken } from "./api";
 
-// ---------------------------------------------------------------------------
-// Mock auth — replaces Supabase/Lovable auth with localStorage-based sessions.
-// NOTE: This is a front-end-only MOCK for the clone. No real backend.
-// ---------------------------------------------------------------------------
+// Real backend-backed auth (JWT session tokens + Emergent Google OAuth).
 
-export interface MockUser {
-  id: string;
+export interface AppUser {
+  user_id: string;
   email: string;
   name?: string;
-}
-
-const SESSION_KEY = "tbm_mock_session";
-const USERS_KEY = "tbm_mock_users";
-
-function readUsers(): Record<string, { password: string; user: MockUser }> {
-  try {
-    return JSON.parse(localStorage.getItem(USERS_KEY) || "{}");
-  } catch {
-    return {};
-  }
-}
-function writeUsers(u: Record<string, { password: string; user: MockUser }>) {
-  localStorage.setItem(USERS_KEY, JSON.stringify(u));
-}
-function readSession(): MockUser | null {
-  try {
-    const raw = localStorage.getItem(SESSION_KEY);
-    return raw ? (JSON.parse(raw) as MockUser) : null;
-  } catch {
-    return null;
-  }
+  picture?: string;
+  is_subscribed: boolean;
+  on_trial?: boolean;
+  trial_days_left?: number;
+  auth_provider?: string;
 }
 
 interface AuthContextValue {
-  user: MockUser | null;
+  user: AppUser | null;
   isAuthenticated: boolean;
   isLoading: boolean;
   signUp: (email: string, password: string, name?: string) => Promise<{ error?: string }>;
   signIn: (email: string, password: string) => Promise<{ error?: string }>;
-  signInWithGoogle: () => Promise<{ error?: string }>;
-  signOut: () => void;
+  signInWithGoogle: () => void;
+  signOut: () => Promise<void>;
+  refreshUser: () => Promise<void>;
+  setUserFromCallback: (u: AppUser, token: string) => void;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<MockUser | null>(null);
+  const [user, setUser] = useState<AppUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    setUser(readSession());
-    setIsLoading(false);
-    const onStorage = () => setUser(readSession());
-    window.addEventListener("storage", onStorage);
-    return () => window.removeEventListener("storage", onStorage);
+  const checkAuth = useCallback(async () => {
+    try {
+      const res = await api.get("/auth/me");
+      setUser(res.data);
+    } catch {
+      setUser(null);
+    } finally {
+      setIsLoading(false);
+    }
   }, []);
 
-  const persist = (u: MockUser | null) => {
-    if (u) localStorage.setItem(SESSION_KEY, JSON.stringify(u));
-    else localStorage.removeItem(SESSION_KEY);
-    setUser(u);
-  };
+  useEffect(() => {
+    // If returning from Google OAuth, let the callback handler establish the session first.
+    if (window.location.hash?.includes("session_id=")) {
+      setIsLoading(false);
+      return;
+    }
+    checkAuth();
+  }, [checkAuth]);
 
   const signUp = useCallback(async (email: string, password: string, name?: string) => {
-    const users = readUsers();
-    const key = email.toLowerCase();
-    if (users[key]) return { error: "An account with this email already exists." };
-    const newUser: MockUser = { id: `u_${Date.now()}`, email, name };
-    users[key] = { password, user: newUser };
-    writeUsers(users);
-    persist(newUser);
-    return {};
+    try {
+      const res = await api.post("/auth/signup", { email, password, name });
+      setToken(res.data.token);
+      setUser(res.data.user);
+      return {};
+    } catch (e: any) {
+      return { error: e?.response?.data?.detail || "Could not create account." };
+    }
   }, []);
 
   const signIn = useCallback(async (email: string, password: string) => {
-    const users = readUsers();
-    const rec = users[email.toLowerCase()];
-    if (!rec || rec.password !== password) return { error: "Invalid email or password." };
-    persist(rec.user);
-    return {};
+    try {
+      const res = await api.post("/auth/login", { email, password });
+      setToken(res.data.token);
+      setUser(res.data.user);
+      return {};
+    } catch (e: any) {
+      return { error: e?.response?.data?.detail || "Invalid email or password." };
+    }
   }, []);
 
-  const signInWithGoogle = useCallback(async () => {
-    const gUser: MockUser = { id: "u_google_demo", email: "you@gmail.com", name: "Google User" };
-    persist(gUser);
-    return {};
+  const signInWithGoogle = useCallback(() => {
+    // REMINDER: DO NOT HARDCODE THE URL, OR ADD ANY FALLBACKS OR REDIRECT URLS, THIS BREAKS THE AUTH
+    const redirectUrl = window.location.origin + "/scan";
+    window.location.href = `https://auth.emergentagent.com/?redirect=${encodeURIComponent(redirectUrl)}`;
   }, []);
 
-  const signOut = useCallback(() => persist(null), []);
+  const signOut = useCallback(async () => {
+    try { await api.post("/auth/logout"); } catch { /* ignore */ }
+    setToken(null);
+    setUser(null);
+  }, []);
+
+  const setUserFromCallback = useCallback((u: AppUser, token: string) => {
+    setToken(token);
+    setUser(u);
+    setIsLoading(false);
+  }, []);
 
   return (
-    <AuthContext.Provider
-      value={{ user, isAuthenticated: !!user, isLoading, signUp, signIn, signInWithGoogle, signOut }}
-    >
+    <AuthContext.Provider value={{ user, isAuthenticated: !!user, isLoading, signUp, signIn, signInWithGoogle, signOut, refreshUser: checkAuth, setUserFromCallback }}>
       {children}
     </AuthContext.Provider>
   );
@@ -105,83 +105,90 @@ export function useAuth(): AuthContextValue {
   return ctx;
 }
 
-// ---- Subscription (mock) --------------------------------------------------
+// ---- Subscription (with 14-day free trial) --------------------------------
 export function useSubscription(userId?: string) {
-  const key = `tbm_mock_sub_${userId ?? "anon"}`;
+  const { refreshUser } = useAuth();
   const [isSubscribed, setIsSubscribed] = useState(false);
+  const [onTrial, setOnTrial] = useState(false);
+  const [trialDaysLeft, setTrialDaysLeft] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    setIsSubscribed(localStorage.getItem(key) === "1");
-    setIsLoading(false);
-  }, [key]);
+  const load = useCallback(async () => {
+    if (!userId) { setIsSubscribed(false); setIsLoading(false); return; }
+    try {
+      const res = await api.get("/subscription");
+      setIsSubscribed(!!res.data.is_subscribed);
+      setOnTrial(!!res.data.on_trial);
+      setTrialDaysLeft(res.data.trial_days_left || 0);
+    } catch {
+      setIsSubscribed(false);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [userId]);
 
-  const subscribe = useCallback(() => {
-    localStorage.setItem(key, "1");
-    setIsSubscribed(true);
-  }, [key]);
+  useEffect(() => { load(); }, [load]);
 
-  const unsubscribe = useCallback(() => {
-    localStorage.removeItem(key);
-    setIsSubscribed(false);
-  }, [key]);
+  const startTrial = useCallback(async () => {
+    const res = await api.post("/start-trial");
+    setIsSubscribed(!!res.data.is_subscribed);
+    setOnTrial(!!res.data.on_trial);
+    setTrialDaysLeft(res.data.trial_days_left || 0);
+    refreshUser();
+  }, [refreshUser]);
 
-  return { isSubscribed, isLoading, subscribe, unsubscribe };
+  const subscribe = useCallback(async () => {
+    const res = await api.post("/subscribe");
+    setIsSubscribed(!!res.data.is_subscribed);
+    setOnTrial(false);
+    refreshUser();
+  }, [refreshUser]);
+
+  return { isSubscribed, onTrial, trialDaysLeft, isLoading, startTrial, subscribe, reload: load };
 }
 
-// ---- Favourites (mock) ----------------------------------------------------
+// ---- Favourites -----------------------------------------------------------
 export interface FavouriteItem {
   brand: string;
   product: string;
   shade: string;
-  hex: string;
-  priceUSD: number;
-  brandUrl: string;
+  hex?: string;
+  priceUSD?: number;
+  brandUrl?: string;
   category: string;
 }
 
 export function useFavourites(userId?: string) {
-  const key = `tbm_mock_favs_${userId ?? "anon"}`;
   const [favourites, setFavourites] = useState<FavouriteItem[]>([]);
 
-  useEffect(() => {
+  const load = useCallback(async () => {
+    if (!userId) { setFavourites([]); return; }
     try {
-      setFavourites(JSON.parse(localStorage.getItem(key) || "[]"));
+      const res = await api.get("/favourites");
+      setFavourites(res.data || []);
     } catch {
       setFavourites([]);
     }
-  }, [key]);
+  }, [userId]);
 
-  const save = (items: FavouriteItem[]) => {
-    localStorage.setItem(key, JSON.stringify(items));
-    setFavourites(items);
-  };
-
-  const matchKey = (f: FavouriteItem, brand: string, product: string, shade: string, category: string) =>
-    f.brand === brand && f.product === product && f.shade === shade && f.category === category;
+  useEffect(() => { load(); }, [load]);
 
   const isFavourite = useCallback(
     (brand: string, product: string, shade: string, category: string) =>
-      favourites.some((f) => matchKey(f, brand, product, shade, category)),
+      favourites.some((f) => f.brand === brand && f.product === product && f.shade === shade && f.category === category),
     [favourites]
   );
 
-  const toggleFavourite = useCallback(
-    (item: FavouriteItem) => {
-      const exists = favourites.some((f) => matchKey(f, item.brand, item.product, item.shade, item.category));
-      if (exists) {
-        save(favourites.filter((f) => !matchKey(f, item.brand, item.product, item.shade, item.category)));
-      } else {
-        save([item, ...favourites]);
-      }
-    },
-    [favourites]
-  );
+  const toggleFavourite = useCallback(async (item: FavouriteItem) => {
+    // optimistic
+    setFavourites((prev) => {
+      const exists = prev.some((f) => f.brand === item.brand && f.product === item.product && f.shade === item.shade && f.category === item.category);
+      return exists
+        ? prev.filter((f) => !(f.brand === item.brand && f.product === item.product && f.shade === item.shade && f.category === item.category))
+        : [item, ...prev];
+    });
+    try { await api.post("/favourites/toggle", item); } catch { load(); }
+  }, [load]);
 
-  const removeFavourite = useCallback(
-    (item: FavouriteItem) => save(favourites.filter((f) => !matchKey(f, item.brand, item.product, item.shade, item.category))),
-    [favourites]
-  );
-
-  return { favourites, isFavourite, toggleFavourite, removeFavourite };
+  return { favourites, isFavourite, toggleFavourite, reload: load };
 }

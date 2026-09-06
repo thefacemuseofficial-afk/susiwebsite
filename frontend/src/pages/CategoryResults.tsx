@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useMemo } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useParams, useNavigate } from "react-router-dom";
 import { ArrowLeft, ExternalLink, ArrowUpDown, Store, Heart } from "lucide-react";
 import { getShadesForCategoryWithOverrides, getEyeshadowByEyeColourWithOverrides, getEyeshadowPalettesByEyeColour, getCategoryDescription, getRetailerLinks, type EyeColour } from "@/lib/shadeData";
 import { detectUserLocation, convertPrice, locationForRegion, type UserLocation, type Region } from "@/lib/geolocation";
@@ -25,8 +25,9 @@ export default function CategoryResults() {
   const description = getCategoryDescription(category);
 
   const { user, isAuthenticated } = useAuth();
-  const { isSubscribed, isLoading: subLoading, subscribe } = useSubscription(user?.id);
-  const { isFavourite, toggleFavourite } = useFavourites(user?.id);
+  const { isSubscribed, isLoading: subLoading, startTrial } = useSubscription(user?.user_id);
+  const { isFavourite, toggleFavourite } = useFavourites(user?.user_id);
+  const navigate = useNavigate();
 
   const [location, setLocation] = useState<UserLocation | null>(null);
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 200]);
@@ -80,7 +81,7 @@ export default function CategoryResults() {
         <Link to="/results" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors mb-4"><ArrowLeft className="h-4 w-4" /> Back</Link>
         <h1 className="font-display text-xl font-bold text-foreground mb-1">{title}</h1>
         <p className="text-xs text-muted-foreground mb-6">{description}</p>
-        <SubscriptionGate isAuthenticated={isAuthenticated} onSubscribe={subscribe} />
+        <SubscriptionGate isAuthenticated={isAuthenticated} onStartTrial={startTrial} onSubscribeLater={() => navigate("/results")} />
       </main>
     );
   }

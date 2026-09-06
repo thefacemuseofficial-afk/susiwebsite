@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Menu } from "lucide-react";
 import { Logo } from "./Logo";
 import { SlideMenu } from "./SlideMenu";
+import { TrialBanner } from "./TrialBanner";
 
 export function AppHeader() {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -19,6 +20,7 @@ export function AppHeader() {
         <Logo />
         <div className="w-6 justify-self-end" />
       </header>
+      <TrialBanner />
       <SlideMenu open={menuOpen} onClose={() => setMenuOpen(false)} />
     </>
   );

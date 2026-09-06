@@ -24,9 +24,8 @@ export default function Login() {
     navigate("/");
   };
 
-  const handleGoogle = async () => {
-    await signInWithGoogle();
-    navigate("/");
+  const handleGoogle = () => {
+    signInWithGoogle();
   };
 
   return (

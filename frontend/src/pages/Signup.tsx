@@ -26,9 +26,8 @@ export default function Signup() {
     navigate("/scan");
   };
 
-  const handleGoogle = async () => {
-    await signInWithGoogle();
-    navigate("/scan");
+  const handleGoogle = () => {
+    signInWithGoogle();
   };
 
   return (

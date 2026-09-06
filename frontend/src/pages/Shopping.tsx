@@ -4,8 +4,9 @@ import { Camera, Loader2, X, MapPin, ShoppingBag, Sparkles, Trash2 } from "lucid
 import { AppHeader } from "@/components/AppHeader";
 import { BarcodeScanner } from "@/components/BarcodeScanner";
 import { Button } from "@/components/ui/button";
-import { analyzeSkinMock, barcodeLookupMock, loadScans, addScan, deleteScan as deleteScanStore, type DemoProduct, type StoredScan } from "@/lib/mockServices";
+import { analyzeSkin, barcodeLookup, getScans, addScan, deleteScanApi, type DemoProduct, type StoredScan } from "@/lib/mockServices";
 import { loadSkinProfile, saveSkinProfile, getFitzpatrickLabel, type FitzpatrickType, type SkinProfile } from "@/lib/skinProfile";
+import { resizeDataUrl } from "@/lib/image";
 import { detectUserLocation, loadStoredRegion, locationForRegion, type UserLocation } from "@/lib/geolocation";
 import { getBrandsForRetailer, getRetailersForRegion, getShadesForCategoryWithOverrides, retailerSites, type CategorySlug } from "@/lib/shadeData";
 import { compareShade, verdictLabel, type MatchResult, type Undertone } from "@/lib/shadeMatch";
@@ -14,8 +15,7 @@ import { useAuth } from "@/lib/mockAuth";
 const RECOMMEND_CATEGORIES: CategorySlug[] = ["foundation", "concealer"];
 
 export default function Shopping() {
-  const { user } = useAuth();
-  const userId = user?.id;
+  const { user, isAuthenticated } = useAuth();
   const [profile, setProfile] = useState<SkinProfile | null>(() => loadSkinProfile());
   const [product, setProduct] = useState<DemoProduct | null>(null);
   const [productLoading, setProductLoading] = useState(false);
@@ -33,7 +33,7 @@ export default function Shopping() {
     detectUserLocation().then(setLocation);
   }, []);
 
-  useEffect(() => { setRecent(loadScans(userId)); }, [userId]);
+  useEffect(() => { if (isAuthenticated) getScans().then(setRecent); else setRecent([]); }, [isAuthenticated]);
 
   const retailers = useMemo(() => (location ? getRetailersForRegion(location.region) : []), [location]);
   useEffect(() => { if (!store && retailers.length > 0) setStore(retailers[0]); }, [retailers, store]);
@@ -46,8 +46,9 @@ export default function Shopping() {
   const handleBarcode = async (barcode: string) => {
     setProductError(null); setProduct(null); setResult(null); setProductLoading(true);
     try {
-      const data = await barcodeLookupMock(barcode);
-      setProduct(data);
+      const data = await barcodeLookup(barcode);
+      if (data.kind === "not_found") setProductError(data.message || "Product not found.");
+      else setProduct(data);
     } catch {
       setProductError("Couldn't identify that product.");
     } finally {
@@ -55,12 +56,16 @@ export default function Shopping() {
     }
   };
 
-  const compareNow = () => {
+  const compareNow = async () => {
     if (!product || !profile || product.kind !== "makeup") return;
-    const match = compareShade({ productHex: product.shadeHex, productUndertone: product.shadeUndertone, skinHex: profile.skinHex, skinUndertone: profile.undertone as Undertone });
+    const match = compareShade({ productHex: product.shadeHex!, productUndertone: (product.shadeUndertone || "neutral") as Undertone, skinHex: profile.skinHex, skinUndertone: profile.undertone as Undertone });
     setResult(match);
-    const saved = addScan(userId, { brand: product.brand, product: product.product, shade: product.shade, shade_hex: product.shadeHex, verdict: match.verdict, reason: match.reason, store: store || null });
-    setRecent((r) => [saved, ...r].slice(0, 6));
+    if (isAuthenticated) {
+      try {
+        const saved = await addScan({ brand: product.brand || null, product: product.product || null, shade: product.shade || null, shade_hex: product.shadeHex || null, verdict: match.verdict, reason: match.reason, store: store || null });
+        setRecent((r) => [saved, ...r].slice(0, 6));
+      } catch { /* ignore */ }
+    }
   };
 
   useEffect(() => {
@@ -69,7 +74,7 @@ export default function Shopping() {
   }, [product, profile]);
 
   const clearProduct = () => { setProduct(null); setResult(null); setProductError(null); };
-  const removeScan = (id: string) => { deleteScanStore(userId, id); setRecent((r) => r.filter((s) => s.id !== id)); };
+  const removeScan = async (id: string) => { await deleteScanApi(id); setRecent((r) => r.filter((s) => s.scan_id !== id)); };
 
   const storeRecommendations = useMemo(() => {
     if (!profile || !store || !location) return [];
@@ -119,7 +124,7 @@ export default function Shopping() {
             <p className="text-xs text-muted-foreground text-center mb-4 max-w-[260px]">Point at the barcode on the back of the makeup product.</p>
             {!product && !productLoading && <BarcodeScanner onDetected={handleBarcode} disabled={productLoading} />}
             {productLoading && (<div className="w-52 h-52 rounded-3xl border-2 border-dashed border-foreground/20 flex flex-col items-center justify-center gap-3 text-foreground/50"><Loader2 className="h-8 w-8 animate-spin" /><span className="text-xs">Looking up product…</span></div>)}
-            {product && (
+            {product && product.kind === "makeup" && (
               <div className="w-full max-w-[280px] rounded-2xl bg-card px-4 py-4">
                 <div className="flex items-center gap-3">
                   <div className="w-12 h-12 rounded-full border border-foreground/10 flex-shrink-0" style={{ backgroundColor: product.shadeHex }} />
@@ -166,14 +171,14 @@ export default function Shopping() {
             <h2 className="font-display text-lg font-bold text-foreground mb-3">Recent scans</h2>
             <div className="flex flex-col gap-2">
               {recent.map((s) => (
-                <div key={s.id} className="rounded-2xl bg-card px-4 py-3 flex items-center gap-3">
+                <div key={s.scan_id} className="rounded-2xl bg-card px-4 py-3 flex items-center gap-3">
                   <div className="w-10 h-10 rounded-full border border-foreground/10 flex-shrink-0" style={{ backgroundColor: s.shade_hex ?? "#ccc" }} />
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-semibold text-card-foreground truncate">{s.brand ?? "Unknown"} <span className="text-xs font-normal text-muted-foreground">· {s.shade ?? ""}</span></p>
                     <p className="text-xs text-muted-foreground truncate">{s.product ?? ""}</p>
                     <p className={`text-[11px] font-semibold ${s.verdict === "match" ? "text-emerald-700" : s.verdict === "too_warm" ? "text-orange-700" : "text-sky-700"}`}>{verdictLabel(s.verdict as MatchResult["verdict"])}{s.store ? ` · ${retailerSites[s.store]?.name ?? s.store}` : ""}</p>
                   </div>
-                  <button onClick={() => removeScan(s.id)} className="p-1 text-muted-foreground hover:text-destructive" aria-label="Delete scan"><Trash2 className="h-4 w-4" /></button>
+                  <button onClick={() => removeScan(s.scan_id)} className="p-1 text-muted-foreground hover:text-destructive" aria-label="Delete scan"><Trash2 className="h-4 w-4" /></button>
                 </div>
               ))}
             </div>
@@ -198,7 +203,10 @@ function SkinScanPanel({ profile, onProfile }: { profile: SkinProfile | null; on
     if (!file) return;
     setError(null);
     const reader = new FileReader();
-    reader.onload = () => setPreview(reader.result as string);
+    reader.onload = async () => {
+      const resized = await resizeDataUrl(reader.result as string, 1024, 0.82);
+      setPreview(resized);
+    };
     reader.readAsDataURL(file);
   };
 
@@ -206,10 +214,10 @@ function SkinScanPanel({ profile, onProfile }: { profile: SkinProfile | null; on
     if (!preview) return;
     setAnalyzing(true); setError(null);
     try {
-      const data = await analyzeSkinMock(preview);
-      const newProfile: SkinProfile = { fitzpatrick: data.fitzpatrick, undertone: data.undertone, skinHex: data.skinHex, label: data.label, eyeColour: data.eyeColour, selfieDataUrl: preview, timestamp: Date.now(), faceShape: data.faceShape };
+      const data = await analyzeSkin(preview);
+      const newProfile: SkinProfile = { fitzpatrick: data.fitzpatrick, undertone: data.undertone, skinHex: data.skinHex, label: data.label, eyeColour: data.eyeColour || undefined, selfieDataUrl: preview, timestamp: Date.now(), faceShape: data.faceShape || undefined };
       saveSkinProfile(newProfile); onProfile(newProfile); setPreview(null); setRecapture(false);
-    } catch { setError("Analysis failed."); } finally { setAnalyzing(false); }
+    } catch (e: any) { setError(e?.response?.data?.detail || "Analysis failed."); } finally { setAnalyzing(false); }
   };
 
   if (profile && !preview && !recapture) {
