@@ -5,7 +5,7 @@ import faceLineArt from "@/assets/face-line-art.svg";
 
 export default function Welcome() {
   useEffect(() => {
-    document.title = "The Face Muse — Find Your Perfect Shade Match";
+    document.title = "Stark Tint — Find Your Perfect Shade Match";
   }, []);
 
   return (

@@ -14,7 +14,7 @@ export function PaymentSuccess() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    document.title = "Payment — The Face Muse";
+    document.title = "Payment — Stark Tint";
     if (!sessionId) { setState("error"); return; }
     let tries = 0;
     const poll = async () => {

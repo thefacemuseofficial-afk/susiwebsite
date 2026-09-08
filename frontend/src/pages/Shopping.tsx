@@ -27,7 +27,7 @@ export default function Shopping() {
   const [recent, setRecent] = useState<StoredScan[]>([]);
 
   useEffect(() => {
-    document.title = "Shopping Mode — The Face Muse";
+    document.title = "Shopping Mode — Stark Tint";
     const stored = loadStoredRegion();
     if (stored) { setLocation(locationForRegion(stored)); return; }
     detectUserLocation().then(setLocation);

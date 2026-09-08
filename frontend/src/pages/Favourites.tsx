@@ -10,7 +10,7 @@ export default function Favourites() {
   const { favourites, toggleFavourite } = useFavourites(user?.id);
 
   useEffect(() => {
-    document.title = "Favourites — The Face Muse";
+    document.title = "Favourites — Stark Tint";
     if (!isAuthenticated) navigate("/login");
   }, [isAuthenticated, navigate]);
 

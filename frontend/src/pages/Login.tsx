@@ -32,7 +32,7 @@ export default function Login() {
     <div className="flex min-h-screen flex-col items-center px-6">
       <div className="pt-6 pb-2"><Logo /></div>
       <main className="flex-1 flex flex-col items-center justify-center w-full">
-        <h1 className="font-display text-xl font-bold text-foreground mb-6 text-center">Log In to The Face Muse</h1>
+        <h1 className="font-display text-xl font-bold text-foreground mb-6 text-center">Log In to Stark Tint</h1>
 
         <form onSubmit={handleSubmit} className="w-full max-w-sm space-y-5">
           {error && <p className="text-sm text-destructive text-center">{error}</p>}

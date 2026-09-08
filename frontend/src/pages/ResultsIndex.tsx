@@ -17,7 +17,7 @@ export default function ResultsIndex() {
   const [profile, setProfile] = useState<SkinProfile | null>(null);
 
   useEffect(() => {
-    document.title = "Your Skin Analysis Results — The Face Muse";
+    document.title = "Your Skin Analysis Results — Stark Tint";
     setProfile(loadSkinProfile());
   }, []);
 

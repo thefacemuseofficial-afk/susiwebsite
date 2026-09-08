@@ -7,6 +7,7 @@ import logging
 import uuid
 import json
 import re
+import asyncio
 from pathlib import Path
 from pydantic import BaseModel, Field, EmailStr
 from typing import List, Optional, Any
@@ -460,7 +461,7 @@ async def analyze_skin(data: AnalyzeInput):
 
 @api_router.get("/")
 async def root():
-    return {"message": "The Face Muse API"}
+    return {"message": "Stark Tint API"}
 
 
 # ----------------------------- Stripe payments -----------------------------
@@ -547,6 +548,87 @@ async def stripe_webhook(request: Request):
     return {"status": "ok"}
 
 
+# ----------------------------- Trial-end reminder emails (Resend) -----------------------------
+RESEND_API_KEY = os.environ.get("RESEND_API_KEY", "")
+REMINDER_FROM_EMAIL = os.environ.get("REMINDER_FROM_EMAIL", "onboarding@resend.dev")
+REMINDER_APP_URL = os.environ.get("REMINDER_APP_URL", "https://thefacemuse.com")
+
+
+def _reminder_html(name: str, days: int) -> str:
+    greeting = f"Hi {name}," if name else "Hi there,"
+    return f"""
+    <div style="font-family:'Helvetica Neue',Arial,sans-serif;background:#B8C0FF;padding:32px;color:#660f33">
+      <div style="max-width:480px;margin:0 auto;background:#B8C0FF;text-align:center">
+        <h1 style="font-family:Georgia,serif;font-size:22px;margin:0 0 8px">stark tint</h1>
+        <div style="background:#FFF4E8;border-radius:16px;padding:24px;margin-top:16px;color:#660f33;text-align:left">
+          <p style="margin:0 0 12px">{greeting}</p>
+          <p style="margin:0 0 12px">Your free trial ends in <strong>{days} day{'s' if days != 1 else ''}</strong>.</p>
+          <p style="margin:0 0 16px">Subscribe now to keep all your personalised shade matches, favourites and shopping tools — just $6/month, cancel anytime.</p>
+          <p style="text-align:center;margin:20px 0">
+            <a href="{REMINDER_APP_URL}/profile" style="background:#660f33;color:#FFF4E8;text-decoration:none;padding:12px 28px;border-radius:999px;font-weight:600;display:inline-block">Subscribe now</a>
+          </p>
+          <p style="margin:16px 0 0;font-size:12px;color:#8a4a63">If you've already subscribed, you can ignore this email.</p>
+        </div>
+      </div>
+    </div>
+    """
+
+
+async def send_resend_email(to_email: str, subject: str, html: str) -> bool:
+    if not RESEND_API_KEY:
+        logger.info("Trial reminder skipped (RESEND_API_KEY not configured).")
+        return False
+    try:
+        async with httpx.AsyncClient(timeout=15) as hc:
+            r = await hc.post(
+                "https://api.resend.com/emails",
+                headers={"Authorization": f"Bearer {RESEND_API_KEY}", "Content-Type": "application/json"},
+                json={"from": REMINDER_FROM_EMAIL, "to": [to_email], "subject": subject, "html": html},
+            )
+        if r.status_code >= 400:
+            logger.error("Resend error %s: %s", r.status_code, r.text)
+            return False
+        return True
+    except Exception:
+        logger.exception("Resend send failed")
+        return False
+
+
+async def process_trial_reminders():
+    """Send a reminder to trial users with ~3 days left (once)."""
+    lo = now_utc() + timedelta(days=2)
+    hi = now_utc() + timedelta(days=3)
+    cursor = db.users.find({
+        "is_subscribed": {"$ne": True},
+        "trial_ends_at": {"$gt": lo, "$lte": hi},
+        "trial_reminder_3d_sent": {"$ne": True},
+    })
+    async for u in cursor:
+        status = compute_sub(u)
+        days = status["trial_days_left"] or 3
+        ok = await send_resend_email(u["email"], "Your Stark Tint free trial ends in 3 days", _reminder_html(u.get("name") or "", days))
+        if ok:
+            await db.users.update_one({"user_id": u["user_id"]}, {"$set": {"trial_reminder_3d_sent": True}})
+
+
+async def _reminder_loop():
+    while True:
+        try:
+            await process_trial_reminders()
+        except Exception:
+            logger.exception("reminder loop error")
+        await asyncio.sleep(6 * 3600)  # every 6 hours
+
+
+@api_router.post("/reminders/test")
+async def test_reminder(user: PublicUser = Depends(get_current_user)):
+    """Send a trial-reminder email to the current user right now (for testing delivery)."""
+    ok = await send_resend_email(user.email, "Your Stark Tint free trial ends in 3 days", _reminder_html(user.name or "", 3))
+    if not ok:
+        raise HTTPException(status_code=500, detail="Email not sent — check RESEND_API_KEY / from-address verification.")
+    return {"sent": True, "to": user.email}
+
+
 app.include_router(api_router)
 
 app.add_middleware(
@@ -558,6 +640,11 @@ app.add_middleware(
 )
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+
+
+@app.on_event("startup")
+async def start_reminder_loop():
+    asyncio.create_task(_reminder_loop())
 
 
 @app.on_event("shutdown")

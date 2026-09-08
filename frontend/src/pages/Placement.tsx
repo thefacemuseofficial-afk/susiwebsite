@@ -17,7 +17,7 @@ export default function Placement() {
   const [product, setProduct] = useState<PlacementProduct>(isProduct(productSearch) ? productSearch : "contour");
 
   useEffect(() => {
-    document.title = "Placement Guide — The Face Muse";
+    document.title = "Placement Guide — Stark Tint";
     setProfile(loadSkinProfile());
   }, []);
 

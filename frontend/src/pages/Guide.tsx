@@ -18,7 +18,7 @@ export default function Guide() {
   const [manualUndertone, setManualUndertone] = useState<Undertone>("neutral");
 
   useEffect(() => {
-    document.title = "Application Guide & Foundation Mixing — The Face Muse";
+    document.title = "Application Guide & Foundation Mixing — Stark Tint";
     setProfile(loadSkinProfile());
   }, []);
 

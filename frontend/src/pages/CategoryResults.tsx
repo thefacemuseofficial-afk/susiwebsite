@@ -36,7 +36,7 @@ export default function CategoryResults() {
   const [profile, setProfile] = useState<SkinProfile | null>(null);
 
   useEffect(() => {
-    document.title = `${title} Shade Matches — The Face Muse`;
+    document.title = `${title} Shade Matches — Stark Tint`;
     detectUserLocation().then(setLocation);
     const p = loadSkinProfile();
     setProfile(p);
