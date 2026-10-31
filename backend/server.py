@@ -8,6 +8,7 @@ import uuid
 import json
 import re
 import asyncio
+import html as html_utils
 from pathlib import Path
 from pydantic import BaseModel, Field, EmailStr
 from typing import List, Optional, Any
@@ -15,9 +16,20 @@ from datetime import datetime, timezone, timedelta
 import httpx
 from passlib.context import CryptContext
 from emergentintegrations.llm.chat import LlmChat, UserMessage, ImageContent
+from google.oauth2 import id_token
+from google.auth.transport import requests as google_requests
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
+
+GOOGLE_CLIENT_ID = os.environ.get("GOOGLE_CLIENT_ID", "")
+FEEDBACK_EMAIL = os.environ.get("FEEDBACK_EMAIL", "feedback@chicshades.club")
+HELP_EMAIL = os.environ.get("HELP_EMAIL", "hello@chicshadesclub")
+FORM_RECIPIENTS = {
+    "feedback": FEEDBACK_EMAIL,
+    "help": HELP_EMAIL,
+}
+CONTACT_FROM_EMAIL = os.environ.get("CONTACT_FROM_EMAIL", "hello@chicshadesclub")
 
 mongo_url = os.environ['MONGO_URL']
 client = AsyncIOMotorClient(mongo_url)
@@ -48,6 +60,9 @@ class LoginInput(BaseModel):
 
 class GoogleSessionInput(BaseModel):
     session_id: str
+
+class GoogleCredentialInput(BaseModel):
+    credential: str
 
 class PublicUser(BaseModel):
     user_id: str
@@ -110,6 +125,17 @@ class AnalyzeInput(BaseModel):
 
 class BarcodeInput(BaseModel):
     barcode: str
+
+
+class ContactSubmission(BaseModel):
+    form_type: str = Field(default="feedback")
+    name: Optional[str] = None
+    email: Optional[EmailStr] = None
+    subject: Optional[str] = None
+    message: str = Field(min_length=1)
+
+class AccountDeletionRequest(BaseModel):
+    email: EmailStr
 
 
 # ----------------------------- Auth helpers -----------------------------
@@ -203,6 +229,47 @@ async def login(data: LoginInput, response: Response):
     return {"token": token, "user": PublicUser(**clean)}
 
 
+@api_router.post("/auth/google")
+async def google_auth(data: GoogleCredentialInput, response: Response):
+    if not GOOGLE_CLIENT_ID:
+        raise HTTPException(status_code=500, detail="GOOGLE_CLIENT_ID is not configured")
+    try:
+        payload = id_token.verify_oauth2_token(data.credential, google_requests.Request(), GOOGLE_CLIENT_ID)
+    except Exception as exc:
+        logger.warning("Google credential verification failed: %s", exc)
+        raise HTTPException(status_code=401, detail="Invalid Google credential")
+
+    if not payload.get("email_verified"):
+        raise HTTPException(status_code=401, detail="Google email is not verified")
+
+    email = (payload.get("email") or "").lower()
+    if not email:
+        raise HTTPException(status_code=401, detail="No email from Google")
+
+    user = await db.users.find_one({"email": email})
+    if not user:
+        user_id = f"user_{uuid.uuid4().hex[:12]}"
+        await db.users.insert_one({
+            "user_id": user_id,
+            "email": email,
+            "name": payload.get("name") or email.split("@")[0],
+            "picture": payload.get("picture"),
+            "password_hash": None,
+            "is_subscribed": False,
+            "auth_provider": "google",
+            "created_at": now_utc(),
+        })
+    else:
+        user_id = user["user_id"]
+        await db.users.update_one({"user_id": user_id}, {"$set": {"name": payload.get("name") or user.get("name"), "picture": payload.get("picture")}})
+
+    token = await create_session(user_id)
+    set_session_cookie(response, token)
+    clean = await db.users.find_one({"user_id": user_id}, {"_id": 0, "password_hash": 0})
+    clean.update(compute_sub(clean))
+    return {"token": token, "user": PublicUser(**clean)}
+
+
 @api_router.post("/auth/google/session")
 async def google_session(data: GoogleSessionInput, response: Response):
     async with httpx.AsyncClient(timeout=15) as hc:
@@ -253,6 +320,22 @@ async def logout(response: Response, session_token: Optional[str] = Cookie(defau
         await db.user_sessions.delete_many({"session_token": token})
     response.delete_cookie("session_token", path="/")
     return {"ok": True}
+
+
+@api_router.post("/account-deletion-request")
+async def request_account_deletion(data: AccountDeletionRequest):
+    account_email = html_utils.escape(str(data.email))
+    html = f"""
+    <div style="font-family:Arial,sans-serif;color:#1f2937;line-height:1.6">
+        <h2>Account deletion request</h2>
+        <p>A user requested deletion of their chic shades club account and associated data.</p>
+        <p><strong>Account email:</strong> {account_email}</p>
+    </div>
+    """
+    sent = await send_resend_email(FEEDBACK_EMAIL, "Account deletion request", html)
+    if not sent:
+        raise HTTPException(status_code=503, detail="Deletion request could not be delivered")
+    return {"submitted": True}
 
 
 # ----------------------------- Subscription -----------------------------
@@ -461,7 +544,7 @@ async def analyze_skin(data: AnalyzeInput):
 
 @api_router.get("/")
 async def root():
-    return {"message": "Stark Tint API"}
+    return {"message": "chic shades club API"}
 
 
 # ----------------------------- Stripe payments -----------------------------
@@ -548,10 +631,40 @@ async def stripe_webhook(request: Request):
     return {"status": "ok"}
 
 
+@api_router.post("/contact")
+async def submit_contact(submission: ContactSubmission):
+        """Send contact-form submissions to the appropriate chic shades club inbox."""
+        form_type = (submission.form_type or "feedback").lower().strip()
+        recipient = FORM_RECIPIENTS.get(form_type, FEEDBACK_EMAIL)
+        subject = submission.subject or (
+                "Feedback from chic shades club" if form_type == "feedback" else "Help enquiry from chic shades club"
+        )
+        sender_name = submission.name or "Website visitor"
+        sender_email = submission.email or "no-reply@chicshades.club"
+
+        html = f"""
+        <div style="font-family:Arial,sans-serif;color:#1f2937;line-height:1.6">
+            <h2 style="margin:0 0 12px">{subject}</h2>
+            <p><strong>From:</strong> {sender_name} &lt;{sender_email}&gt;</p>
+            <p><strong>Form type:</strong> {form_type}</p>
+            <div style="background:#f9fafb;border:1px solid #e5e7eb;padding:16px;border-radius:8px;margin-top:12px">
+                {submission.message.replace(chr(10), '<br>')}
+            </div>
+        </div>
+        """
+
+        if not RESEND_API_KEY:
+                logger.info("Contact form email skipped (RESEND_API_KEY not configured): %s -> %s", form_type, recipient)
+                return {"sent": False, "to": recipient, "type": form_type, "status": "skipped"}
+
+        ok = await send_resend_email(recipient, subject, html)
+        return {"sent": ok, "to": recipient, "type": form_type, "status": "sent" if ok else "failed"}
+
+
 # ----------------------------- Trial-end reminder emails (Resend) -----------------------------
 RESEND_API_KEY = os.environ.get("RESEND_API_KEY", "")
 REMINDER_FROM_EMAIL = os.environ.get("REMINDER_FROM_EMAIL", "onboarding@resend.dev")
-REMINDER_APP_URL = os.environ.get("REMINDER_APP_URL", "https://thefacemuse.com")
+REMINDER_APP_URL = os.environ.get("REMINDER_APP_URL", "https://chicshades.club")
 
 
 def _reminder_html(name: str, days: int) -> str:
@@ -559,7 +672,7 @@ def _reminder_html(name: str, days: int) -> str:
     return f"""
     <div style="font-family:'Helvetica Neue',Arial,sans-serif;background:#B8C0FF;padding:32px;color:#660f33">
       <div style="max-width:480px;margin:0 auto;background:#B8C0FF;text-align:center">
-        <h1 style="font-family:Georgia,serif;font-size:22px;margin:0 0 8px">stark tint</h1>
+        <h1 style="font-family:Georgia,serif;font-size:22px;margin:0 0 8px">chic shades club</h1>
         <div style="background:#FFF4E8;border-radius:16px;padding:24px;margin-top:16px;color:#660f33;text-align:left">
           <p style="margin:0 0 12px">{greeting}</p>
           <p style="margin:0 0 12px">Your free trial ends in <strong>{days} day{'s' if days != 1 else ''}</strong>.</p>
@@ -606,7 +719,7 @@ async def process_trial_reminders():
     async for u in cursor:
         status = compute_sub(u)
         days = status["trial_days_left"] or 3
-        ok = await send_resend_email(u["email"], "Your Stark Tint free trial ends in 3 days", _reminder_html(u.get("name") or "", days))
+        ok = await send_resend_email(u["email"], "Your chic shades club free trial ends in 3 days", _reminder_html(u.get("name") or "", days))
         if ok:
             await db.users.update_one({"user_id": u["user_id"]}, {"$set": {"trial_reminder_3d_sent": True}})
 
@@ -623,7 +736,7 @@ async def _reminder_loop():
 @api_router.post("/reminders/test")
 async def test_reminder(user: PublicUser = Depends(get_current_user)):
     """Send a trial-reminder email to the current user right now (for testing delivery)."""
-    ok = await send_resend_email(user.email, "Your Stark Tint free trial ends in 3 days", _reminder_html(user.name or "", 3))
+    ok = await send_resend_email(user.email, "Your chic shades club free trial ends in 3 days", _reminder_html(user.name or "", 3))
     if not ok:
         raise HTTPException(status_code=500, detail="Email not sent — check RESEND_API_KEY / from-address verification.")
     return {"sent": True, "to": user.email}

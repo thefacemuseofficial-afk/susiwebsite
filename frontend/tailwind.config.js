@@ -15,11 +15,11 @@ module.exports = {
         sm: "calc(var(--radius) - 4px)",
       },
       colors: {
-        background: "#B8C0FF",
+        background: "#BDB0DF",
         foreground: "#660f33",
         "butter-yellow": "#660f33",
         card: {
-          DEFAULT: "#B8C0FF",
+          DEFAULT: "#BDB0DF",
           foreground: "#660f33",
         },
         popover: {

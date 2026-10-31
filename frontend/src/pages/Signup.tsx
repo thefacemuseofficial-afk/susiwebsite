@@ -40,7 +40,7 @@ export default function Signup() {
       </Link>
 
       <main className="flex-1 flex flex-col items-center justify-center w-full">
-        <h1 className="font-display text-xl font-bold text-foreground mb-6 text-center">Join Stark Tint</h1>
+        <h1 className="font-display text-xl font-bold text-foreground mb-6 text-center">Join chic shades club</h1>
 
         <form onSubmit={handleSubmit} className="w-full max-w-sm space-y-5">
           {error && <p className="text-sm text-destructive text-center">{error}</p>}

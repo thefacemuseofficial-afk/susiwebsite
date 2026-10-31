@@ -80,3 +80,12 @@ memory/test_credentials.md
 
 # Mobile development
 android-sdk/
+
+# Secrets and local artifacts
+.env
+.env.*
+*.env
+.venv/
+.ruff_cache/
+__pycache__/
+*.mp4

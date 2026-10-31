@@ -7,10 +7,10 @@ import { useAuth, useFavourites } from "@/lib/mockAuth";
 export default function Favourites() {
   const navigate = useNavigate();
   const { user, isAuthenticated } = useAuth();
-  const { favourites, toggleFavourite } = useFavourites(user?.id);
+  const { favourites, toggleFavourite } = useFavourites(user?.user_id);
 
   useEffect(() => {
-    document.title = "Favourites — Stark Tint";
+    document.title = "Favourites — chic shades club";
     if (!isAuthenticated) navigate("/login");
   }, [isAuthenticated, navigate]);
 

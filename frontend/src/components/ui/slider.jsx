@@ -3,6 +3,17 @@ import * as SliderPrimitive from "@radix-ui/react-slider"
 
 import { cn } from "@/lib/utils"
 
+/**
+ * @typedef {Object} SliderProps
+ * @property {string} [className]
+ * @property {number} [min]
+ * @property {number} [max]
+ * @property {number} [step]
+ * @property {number[] | [number, number]} [value]
+ * @property {(value: number[] | [number, number]) => void} [onValueChange]
+ */
+
+/** @type {import("react").ForwardRefExoticComponent<SliderProps & import("react").ComponentPropsWithoutRef<typeof SliderPrimitive.Root> & import("react").RefAttributes<HTMLSpanElement>>} */
 const Slider = React.forwardRef(({ className, ...props }, ref) => (
   <SliderPrimitive.Root
     ref={ref}

@@ -1,21 +1,12 @@
 import React, { useEffect, useRef } from "react";
 import "./App.css";
-import { BrowserRouter, Routes, Route, useLocation, useNavigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/lib/mockAuth";
 import { api } from "@/lib/api";
-import Welcome from "@/pages/Welcome";
-import Signup from "@/pages/Signup";
-import Login from "@/pages/Login";
-import Scan from "@/pages/Scan";
-import ResultsLayout from "@/pages/ResultsLayout";
-import ResultsIndex from "@/pages/ResultsIndex";
-import CategoryResults from "@/pages/CategoryResults";
-import Placement from "@/pages/Placement";
-import Guide from "@/pages/Guide";
-import Shopping from "@/pages/Shopping";
-import Profile from "@/pages/Profile";
-import Favourites from "@/pages/Favourites";
-import { PaymentSuccess, PaymentCancel } from "@/pages/Payment";
+import TemporaryLanding from "@/pages/TemporaryLanding";
+import Feedback from "@/pages/Feedback";
+import Privacy from "@/pages/Privacy";
+import DeleteAccount from "@/pages/DeleteAccount";
 
 // Handles the Emergent Google OAuth return (#session_id=...).
 function AuthCallback() {
@@ -56,22 +47,11 @@ function AppRoutes() {
   }
   return (
     <Routes>
-      <Route path="/" element={<Welcome />} />
-      <Route path="/welcome" element={<Welcome />} />
-      <Route path="/signup" element={<Signup />} />
-      <Route path="/login" element={<Login />} />
-      <Route path="/scan" element={<Scan />} />
-      <Route path="/results" element={<ResultsLayout />}>
-        <Route index element={<ResultsIndex />} />
-        <Route path=":category" element={<CategoryResults />} />
-      </Route>
-      <Route path="/placement" element={<Placement />} />
-      <Route path="/guide" element={<Guide />} />
-      <Route path="/shopping" element={<Shopping />} />
-      <Route path="/profile" element={<Profile />} />
-      <Route path="/favourites" element={<Favourites />} />
-      <Route path="/payment/success" element={<PaymentSuccess />} />
-      <Route path="/payment/cancel" element={<PaymentCancel />} />
+      <Route path="/" element={<TemporaryLanding />} />
+      <Route path="/feedback" element={<Feedback />} />
+      <Route path="/privacy" element={<Privacy />} />
+      <Route path="/delete-account" element={<DeleteAccount />} />
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
 }

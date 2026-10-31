@@ -20,7 +20,7 @@ export function SubscriptionGate({ isAuthenticated, onStartTrial, onSubscribeLat
         <Sparkles className="h-3.5 w-3.5" /> First 14 days free
       </span>
       <p className="text-sm text-muted-foreground mb-1">
-        Subscribe to Stark Tint Pro to view personalised product matches across all categories.
+        Subscribe to chic shades club Pro to view personalised product matches across all categories.
       </p>
       <p className="text-xl font-bold text-card-foreground mb-1">
         $6<span className="text-sm font-normal text-muted-foreground">/month</span>

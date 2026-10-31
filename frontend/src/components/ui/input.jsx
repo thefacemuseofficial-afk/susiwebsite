@@ -1,7 +1,15 @@
-import * as React from "react"
+import * as React from "react";
 
-import { cn } from "@/lib/utils"
+import { cn } from "@/lib/utils";
 
+/**
+ * @typedef {Object} InputProps
+ * @property {string} [className]
+ * @property {string} [type]
+ * @property {React.ReactNode} [children]
+ */
+
+/** @type {import("react").ForwardRefExoticComponent<InputProps & import("react").InputHTMLAttributes<HTMLInputElement> & import("react").RefAttributes<HTMLInputElement>>} */
 const Input = React.forwardRef(({ className, type, ...props }, ref) => {
   return (
     <input
@@ -11,9 +19,11 @@ const Input = React.forwardRef(({ className, type, ...props }, ref) => {
         className
       )}
       ref={ref}
-      {...props} />
+      {...props}
+    />
   );
-})
-Input.displayName = "Input"
+});
 
-export { Input }
+Input.displayName = "Input";
+
+export { Input };

@@ -38,7 +38,7 @@ export default function Scan() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    document.title = "Scan Your Skin Tone — Stark Tint";
+    document.title = "Scan Your Skin Tone — chic shades club";
   }, []);
 
   useEffect(() => {

@@ -8,8 +8,8 @@ stripe.api_key = os.environ.get("STRIPE_SECRET_KEY") or "sk_test_emergent"
 
 CATALOG = [
     {
-        "emergent_product_id": "facemuse_pro",
-        "name": "The Face Muse Pro",
+        "emergent_product_id": "chic_shades_club_pro",
+        "name": "chic shades club Pro",
         "tax_code": "txcd_10103001",  # SaaS
         "prices": [
             {"lookup_key": "pro_monthly", "amount": 600, "currency": "usd", "interval": "month"},

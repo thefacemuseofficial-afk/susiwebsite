@@ -63,14 +63,6 @@ export function SlideMenu({ open, onClose }: SlideMenuProps) {
               <ShoppingBag className="h-4 w-4" />
               <span className="text-[13px] font-medium leading-tight">Shopping Mode</span>
             </Link>
-            <Link to="/placement" onClick={onClose} className="flex items-center gap-3 rounded-lg px-3 py-2 text-foreground hover:bg-accent transition-colors">
-              <Sparkles className="h-4 w-4" />
-              <span className="text-[13px] font-medium leading-tight">Placement Guide</span>
-            </Link>
-            <Link to="/guide" onClick={onClose} className="flex items-center gap-3 rounded-lg px-3 py-2 text-foreground hover:bg-accent transition-colors">
-              <Brush className="h-4 w-4" />
-              <span className="text-[13px] font-medium leading-tight">Application Guide</span>
-            </Link>
             <div className="h-px bg-foreground/10 my-1" />
 
             {categoryItems.map((item) => (

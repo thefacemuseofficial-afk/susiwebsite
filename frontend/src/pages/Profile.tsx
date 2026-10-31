@@ -26,7 +26,7 @@ export default function Profile() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    document.title = "Profile — Stark Tint";
+    document.title = "Profile — chic shades club";
     if (!isLoading && !isAuthenticated) navigate("/login");
   }, [isAuthenticated, isLoading, navigate]);
 

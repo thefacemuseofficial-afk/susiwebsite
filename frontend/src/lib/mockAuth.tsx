@@ -1,7 +1,13 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from "react";
 import { api, setToken } from "./api";
 
-// Real backend-backed auth (JWT session tokens + Emergent Google OAuth).
+declare global {
+  interface Window {
+    google?: any;
+  }
+}
+
+// Real backend-backed auth (JWT session tokens + Google OAuth).
 
 export interface AppUser {
   user_id: string;
@@ -75,9 +81,69 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const signInWithGoogle = useCallback(() => {
-    // REMINDER: DO NOT HARDCODE THE URL, OR ADD ANY FALLBACKS OR REDIRECT URLS, THIS BREAKS THE AUTH
-    const redirectUrl = window.location.origin + "/scan";
-    window.location.href = `https://auth.emergentagent.com/?redirect=${encodeURIComponent(redirectUrl)}`;
+    const clientId = process.env.REACT_APP_GOOGLE_CLIENT_ID;
+    if (!clientId) {
+      console.error("Missing REACT_APP_GOOGLE_CLIENT_ID");
+      return;
+    }
+
+    const loadGoogleScript = () => {
+      if (window.google?.accounts?.id) {
+        return true;
+      }
+
+      const existing = document.querySelector('script[src="https://accounts.google.com/gsi/client"]');
+      if (existing) {
+        return false;
+      }
+
+      const script = document.createElement("script");
+      script.src = "https://accounts.google.com/gsi/client";
+      script.async = true;
+      script.defer = true;
+      document.head.appendChild(script);
+      return false;
+    };
+
+    if (!loadGoogleScript()) {
+      const pollForGoogle = setInterval(() => {
+        if (window.google?.accounts?.id) {
+          clearInterval(pollForGoogle);
+          window.google.accounts.id.initialize({
+            client_id: clientId,
+            callback: async (response: { credential?: string }) => {
+              if (!response?.credential) return;
+              try {
+                const res = await api.post("/auth/google", { credential: response.credential });
+                setToken(res.data.token);
+                setUser(res.data.user);
+                window.location.href = "/scan";
+              } catch (e) {
+                console.error("Google sign-in failed", e);
+              }
+            },
+          });
+          window.google.accounts.id.prompt();
+        }
+      }, 150);
+      return;
+    }
+
+    window.google.accounts.id.initialize({
+      client_id: clientId,
+      callback: async (response: { credential?: string }) => {
+        if (!response?.credential) return;
+        try {
+          const res = await api.post("/auth/google", { credential: response.credential });
+          setToken(res.data.token);
+          setUser(res.data.user);
+          window.location.href = "/scan";
+        } catch (e) {
+          console.error("Google sign-in failed", e);
+        }
+      },
+    });
+    window.google.accounts.id.prompt();
   }, []);
 
   const signOut = useCallback(async () => {
