@@ -8,12 +8,12 @@ Tests different payload sizes to identify request body size limits
 import requests
 import json
 import base64
+import os
 import time
 from io import BytesIO
 from PIL import Image, ImageDraw
 
-# Base URL from frontend/.env
-BASE_URL = "https://facial-web-port.preview.emergentagent.com/api"
+BASE_URL = os.environ.get("BACKEND_URL", "http://localhost:8000/api")
 
 def create_realistic_skin_photo(width, height):
     """Create a realistic-looking photo with human skin tones and facial features"""
@@ -155,7 +155,7 @@ def test_normal_size_payload():
         elif response.status_code == 422:
             print(f"\n⚠️  HTTP 422 - Unprocessable Entity")
             print(f"Response: {response.text}")
-            print(f"This means GPT-4o couldn't detect skin in the image")
+            print("This means Gemini couldn't detect skin in the image")
             return False
         
         elif response.status_code == 502:
@@ -251,7 +251,7 @@ def test_large_payload():
         elif response.status_code == 422:
             print(f"\n⚠️  HTTP 422 - Unprocessable Entity")
             print(f"Response: {response.text}")
-            print(f"Large payload was accepted, but GPT-4o couldn't process the image")
+            print("Large payload was accepted, but Gemini couldn't process the image")
             return False
         
         else:
@@ -388,7 +388,7 @@ def test_medium_payload():
         elif response.status_code == 422:
             print(f"\n⚠️  HTTP 422 - Unprocessable Entity")
             print(f"Response: {response.text}")
-            print(f"Medium payload was accepted, but GPT-4o couldn't process the image")
+            print("Medium payload was accepted, but Gemini couldn't process the image")
             return False
         
         else:

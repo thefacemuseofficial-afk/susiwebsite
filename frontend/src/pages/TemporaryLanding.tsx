@@ -62,6 +62,9 @@ export default function TemporaryLanding() {
         />
       </main>
       <footer className="flex w-full max-w-6xl flex-wrap items-center justify-center gap-x-6 gap-y-2 py-4 text-xs text-foreground/70">
+        <Link to="/feedback" className="underline underline-offset-4 hover:text-foreground">
+          Feedback
+        </Link>
         <Link to="/privacy" className="underline underline-offset-4 hover:text-foreground">
           Privacy
         </Link>

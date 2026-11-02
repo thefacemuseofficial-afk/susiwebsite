@@ -15,7 +15,6 @@ from typing import List, Optional, Any
 from datetime import datetime, timezone, timedelta
 import httpx
 from passlib.context import CryptContext
-from emergentintegrations.llm.chat import LlmChat, UserMessage, ImageContent
 from google.oauth2 import id_token
 from google.auth.transport import requests as google_requests
 
@@ -35,7 +34,8 @@ mongo_url = os.environ['MONGO_URL']
 client = AsyncIOMotorClient(mongo_url)
 db = client[os.environ['DB_NAME']]
 
-EMERGENT_LLM_KEY = os.environ.get('EMERGENT_LLM_KEY', '')
+GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")
+GEMINI_MODEL = os.environ.get("GEMINI_MODEL", "gemini-2.5-flash")
 SESSION_DAYS = 7
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
@@ -57,9 +57,6 @@ class SignupInput(BaseModel):
 class LoginInput(BaseModel):
     email: EmailStr
     password: str
-
-class GoogleSessionInput(BaseModel):
-    session_id: str
 
 class GoogleCredentialInput(BaseModel):
     credential: str
@@ -270,42 +267,6 @@ async def google_auth(data: GoogleCredentialInput, response: Response):
     return {"token": token, "user": PublicUser(**clean)}
 
 
-@api_router.post("/auth/google/session")
-async def google_session(data: GoogleSessionInput, response: Response):
-    async with httpx.AsyncClient(timeout=15) as hc:
-        r = await hc.get(
-            "https://demobackend.emergentagent.com/auth/v1/env/oauth/session-data",
-            headers={"X-Session-ID": data.session_id},
-        )
-    if r.status_code != 200:
-        raise HTTPException(status_code=401, detail="Google session exchange failed")
-    info = r.json()
-    email = (info.get("email") or "").lower()
-    if not email:
-        raise HTTPException(status_code=401, detail="No email from Google")
-    user = await db.users.find_one({"email": email})
-    if not user:
-        user_id = f"user_{uuid.uuid4().hex[:12]}"
-        await db.users.insert_one({
-            "user_id": user_id,
-            "email": email,
-            "name": info.get("name") or email.split("@")[0],
-            "picture": info.get("picture"),
-            "password_hash": None,
-            "is_subscribed": False,
-            "auth_provider": "google",
-            "created_at": now_utc(),
-        })
-    else:
-        user_id = user["user_id"]
-        await db.users.update_one({"user_id": user_id}, {"$set": {"name": info.get("name") or user.get("name"), "picture": info.get("picture")}})
-    token = await create_session(user_id)
-    set_session_cookie(response, token)
-    clean = await db.users.find_one({"user_id": user_id}, {"_id": 0, "password_hash": 0})
-    clean.update(compute_sub(clean))
-    return {"token": token, "user": PublicUser(**clean)}
-
-
 @api_router.get("/auth/me", response_model=PublicUser)
 async def auth_me(user: PublicUser = Depends(get_current_user)):
     return user
@@ -458,7 +419,7 @@ async def product_lookup(data: BarcodeInput):
     return {"kind": "not_found", "message": "Couldn't find that product. Try another barcode."}
 
 
-# ----------------------------- Skin analysis (GPT-4o vision) -----------------------------
+# ----------------------------- Skin analysis (Gemini vision) -----------------------------
 SKIN_SYSTEM = (
     "You are a professional makeup shade-matching assistant. Analyse the skin visible in the photo "
     "(cheek, forehead, wrist or inner arm) and return ONLY strict JSON, no prose, with keys: "
@@ -479,6 +440,18 @@ def _strip_b64(data_url: str) -> str:
     return data_url
 
 
+def _image_mime_type(data_url: str) -> str:
+    match = re.match(r"^data:(image/[a-zA-Z0-9.+-]+)(?:;[^,]*)?,", data_url)
+    mime_type = match.group(1).lower() if match else "image/jpeg"
+    supported_types = {
+        "image/avif", "image/gif", "image/heic", "image/heif",
+        "image/jpeg", "image/jpg", "image/png", "image/webp",
+    }
+    if mime_type not in supported_types:
+        raise HTTPException(status_code=400, detail="Unsupported image type")
+    return mime_type
+
+
 def _parse_json(text: str) -> dict:
     text = text.strip()
     m = re.search(r"\{.*\}", text, re.DOTALL)
@@ -489,23 +462,34 @@ def _parse_json(text: str) -> dict:
 
 @api_router.post("/analyze-skin")
 async def analyze_skin(data: AnalyzeInput):
-    if not EMERGENT_LLM_KEY:
-        raise HTTPException(status_code=500, detail="LLM key not configured")
+    if not GEMINI_API_KEY:
+        raise HTTPException(status_code=500, detail="GEMINI_API_KEY is not configured")
     raw_b64 = _strip_b64(data.imageBase64)
     if not raw_b64 or len(raw_b64) < 100:
         raise HTTPException(status_code=400, detail="Invalid image")
+    mime_type = _image_mime_type(data.imageBase64)
     try:
-        chat = LlmChat(
-            api_key=EMERGENT_LLM_KEY,
-            session_id=f"skin_{uuid.uuid4().hex[:8]}",
-            system_message=SKIN_SYSTEM,
-        ).with_model("openai", "gpt-4o")
-        msg = UserMessage(
-            text="Analyse the skin in this photo and return only the JSON described.",
-            file_contents=[ImageContent(image_base64=raw_b64)],
-        )
-        reply = await chat.send_message(msg)
-        result = _parse_json(reply if isinstance(reply, str) else str(reply))
+        async with httpx.AsyncClient(timeout=45) as hc:
+            response = await hc.post(
+                f"https://generativelanguage.googleapis.com/v1beta/models/{GEMINI_MODEL}:generateContent",
+                headers={"x-goog-api-key": GEMINI_API_KEY},
+                json={
+                    "systemInstruction": {"parts": [{"text": SKIN_SYSTEM}]},
+                    "contents": [{
+                        "parts": [
+                            {"text": "Analyse the skin in this photo and return only the JSON described."},
+                            {"inlineData": {"mimeType": mime_type, "data": raw_b64}},
+                        ]
+                    }],
+                    "generationConfig": {"responseMimeType": "application/json", "temperature": 0.1},
+                },
+            )
+            response.raise_for_status()
+        response_parts = response.json().get("candidates", [{}])[0].get("content", {}).get("parts", [])
+        reply = "\n".join(part.get("text", "") for part in response_parts if part.get("text"))
+        if not reply:
+            raise ValueError("Gemini returned no text")
+        result = _parse_json(reply)
     except json.JSONDecodeError:
         raise HTTPException(status_code=502, detail="Could not read skin tone \u2014 try a clearer, well-lit photo.")
     except Exception as e:
@@ -549,7 +533,7 @@ async def root():
 
 # ----------------------------- Stripe payments -----------------------------
 import stripe
-stripe.api_key = os.environ.get("STRIPE_SECRET_KEY") or "sk_test_emergent"
+stripe.api_key = os.environ.get("STRIPE_SECRET_KEY", "")
 STRIPE_WEBHOOK_SECRET = os.environ.get("STRIPE_WEBHOOK_SECRET", "")
 
 class CheckoutRequest(BaseModel):

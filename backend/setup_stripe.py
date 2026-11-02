@@ -4,11 +4,11 @@ from dotenv import load_dotenv
 from pathlib import Path
 
 load_dotenv(Path(__file__).parent / ".env")
-stripe.api_key = os.environ.get("STRIPE_SECRET_KEY") or "sk_test_emergent"
+stripe.api_key = os.environ.get("STRIPE_SECRET_KEY", "")
 
 CATALOG = [
     {
-        "emergent_product_id": "chic_shades_club_pro",
+        "catalog_key": "chic_shades_club_pro",
         "name": "chic shades club Pro",
         "tax_code": "txcd_10103001",  # SaaS
         "prices": [
@@ -20,15 +20,17 @@ CATALOG = [
 
 def get_or_create_product(entry):
     for p in stripe.Product.list(active=True).auto_paging_iter():
-        if p.to_dict().get("metadata", {}).get("emergent_product_id") == entry["emergent_product_id"]:
+        if p.to_dict().get("metadata", {}).get("catalog_key") == entry["catalog_key"] or p.name == entry["name"]:
             return p
     return stripe.Product.create(
         name=entry["name"], tax_code=entry.get("tax_code"),
-        metadata={"managed_by": "emergent", "emergent_product_id": entry["emergent_product_id"]},
+        metadata={"catalog_key": entry["catalog_key"]},
     )
 
 
 def main():
+    if not stripe.api_key:
+        raise RuntimeError("Set STRIPE_SECRET_KEY before setting up the Stripe catalog")
     for entry in CATALOG:
         product = get_or_create_product(entry)
         for p in entry["prices"]:

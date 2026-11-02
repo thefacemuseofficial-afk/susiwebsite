@@ -29,7 +29,6 @@ interface AuthContextValue {
   signInWithGoogle: () => void;
   signOut: () => Promise<void>;
   refreshUser: () => Promise<void>;
-  setUserFromCallback: (u: AppUser, token: string) => void;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -50,8 +49,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
-    // If returning from Google OAuth, let the callback handler establish the session first.
-    if (window.location.hash?.includes("session_id=")) {
+    if (!process.env.REACT_APP_BACKEND_URL) {
       setIsLoading(false);
       return;
     }
@@ -152,14 +150,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(null);
   }, []);
 
-  const setUserFromCallback = useCallback((u: AppUser, token: string) => {
-    setToken(token);
-    setUser(u);
-    setIsLoading(false);
-  }, []);
-
   return (
-    <AuthContext.Provider value={{ user, isAuthenticated: !!user, isLoading, signUp, signIn, signInWithGoogle, signOut, refreshUser: checkAuth, setUserFromCallback }}>
+    <AuthContext.Provider value={{ user, isAuthenticated: !!user, isLoading, signUp, signIn, signInWithGoogle, signOut, refreshUser: checkAuth }}>
       {children}
     </AuthContext.Provider>
   );

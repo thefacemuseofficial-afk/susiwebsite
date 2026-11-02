@@ -16,9 +16,6 @@ const ZONES: Record<PlacementProduct, Zone[]> = {
     { id: "brow", label: "Brow bones", tip: "Just under the arch of each brow to open the eyes.", spots: [{ idx: [105], rx: 0.07, ry: 0.05 }, { idx: [334], rx: 0.07, ry: 0.05 }] },
     { id: "forehead", label: "Centre of forehead", tip: "A soft touch in the centre of the forehead.", spots: [{ idx: [151], rx: 0.10, ry: 0.08 }] },
   ],
-  blush: [
-    { id: "apples", label: "Apples of the cheeks", tip: "Smile and apply to the round apples, blending up toward the temple.", spots: [{ idx: [50], rx: 0.17, ry: 0.13 }, { idx: [280], rx: 0.17, ry: 0.13 }] },
-  ],
   bronzer: [
     { id: "forehead", label: "Forehead & temples", tip: "Where the sun hits: hairline and temples.", spots: [{ idx: [10], rx: 0.16, ry: 0.09 }, { idx: [127], rx: 0.10, ry: 0.10 }, { idx: [356], rx: 0.10, ry: 0.10 }] },
     { id: "cheeks", label: "Under the cheekbones", tip: "A soft sweep under the cheekbones warms the face.", spots: [{ idx: [117], rx: 0.15, ry: 0.08, along: [117, 172] }, { idx: [346], rx: 0.15, ry: 0.08, along: [346, 397] }] },

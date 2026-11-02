@@ -2,7 +2,7 @@
 
 Supports two auth methods that both produce a `session_token` stored in `user_sessions`:
 1. Email + password (JWT-style): POST /api/auth/signup, POST /api/auth/login
-2. Emergent Google OAuth: POST /api/auth/google/session { session_id }
+2. Google Identity Services: POST /api/auth/google { credential }
 
 Auth dependency checks `session_token` cookie first, then `Authorization: Bearer <token>`.
 

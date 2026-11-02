@@ -13,7 +13,7 @@ export interface AnalyzeResult {
   faceShape: FaceShape | null;
 }
 
-/** Real AI skin analysis via backend (GPT-4o vision). */
+/** Real AI skin analysis via the Gemini-backed API. */
 export async function analyzeSkin(imageBase64: string): Promise<AnalyzeResult> {
   const res = await api.post("/analyze-skin", { imageBase64 });
   return res.data as AnalyzeResult;

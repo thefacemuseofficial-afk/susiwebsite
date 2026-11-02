@@ -7,12 +7,12 @@ Tests all endpoints under /api with proper authentication flow
 import requests
 import json
 import base64
+import os
 from io import BytesIO
 from PIL import Image
 import time
 
-# Base URL from frontend/.env
-BASE_URL = "https://facial-web-port.preview.emergentagent.com/api"
+BASE_URL = os.environ.get("BACKEND_URL", "http://localhost:8000/api")
 
 # Test results tracking
 test_results = {
@@ -739,15 +739,15 @@ def test_product_lookup_not_found():
         log_fail("Product Lookup Not Found", f"Expected 200, got {response.status_code}")
 
 def test_analyze_skin():
-    """Test 26: POST /api/analyze-skin - AI skin analysis with GPT-4o"""
+    """Test 26: POST /api/analyze-skin - AI skin analysis with Gemini"""
     print("\n" + "="*60)
-    print("TEST 26: AI Skin Analysis (GPT-4o vision)")
+    print("TEST 26: AI Skin Analysis (Gemini vision)")
     print("="*60)
     
     # Create a test image with skin-like colors
     image_base64 = create_test_image_base64()
     
-    print("Sending image to GPT-4o for analysis (this may take a few seconds)...")
+    print("Sending image to Gemini for analysis (this may take a few seconds)...")
     
     response = requests.post(
         f"{BASE_URL}/analyze-skin",
@@ -792,29 +792,11 @@ def test_analyze_skin():
         else:
             log_fail("AI Skin Analysis", f"Missing keys: {missing_keys}")
     elif response.status_code == 422:
-        log_warning("AI Skin Analysis", "GPT-4o couldn't detect skin in test image (422) - this is acceptable for synthetic test image")
+        log_warning("AI Skin Analysis", "Gemini couldn't detect skin in test image (422) - this is acceptable for synthetic test image")
     elif response.status_code == 502:
-        log_fail("AI Skin Analysis", "GPT-4o analysis failed (502) - check EMERGENT_LLM_KEY and API connectivity")
+        log_fail("AI Skin Analysis", "Gemini analysis failed (502) - check GEMINI_API_KEY and API connectivity")
     else:
         log_fail("AI Skin Analysis", f"Expected 200, got {response.status_code}")
-
-def test_google_session_invalid():
-    """Test 27: POST /api/auth/google/session - Invalid session_id"""
-    print("\n" + "="*60)
-    print("TEST 27: Google OAuth Session (invalid)")
-    print("="*60)
-    
-    response = requests.post(
-        f"{BASE_URL}/auth/google/session",
-        json={"session_id": "invalid_session_id_12345"}
-    )
-    
-    print(f"Status: {response.status_code}")
-    
-    if response.status_code == 401:
-        log_pass("Google OAuth Invalid", "Correctly rejected invalid session_id with 401")
-    else:
-        log_fail("Google OAuth Invalid", f"Expected 401, got {response.status_code}")
 
 def test_stripe_checkout():
     """Test 28: POST /api/payments/checkout - Create Stripe checkout session"""
@@ -1081,10 +1063,7 @@ def main():
     # Test 26: AI Skin Analysis
     test_analyze_skin()
     
-    # Test 27: Google OAuth
-    test_google_session_invalid()
-    
-    # Test 28-32: Stripe Payments
+    # Test 27-31: Stripe Payments
     session_id = test_stripe_checkout()
     test_stripe_payment_status(session_id)
     test_stripe_payment_status_not_found()

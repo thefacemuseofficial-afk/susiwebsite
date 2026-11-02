@@ -7,13 +7,13 @@ Tests with high-quality realistic images at different sizes
 import requests
 import json
 import base64
+import os
 import time
 from io import BytesIO
 from PIL import Image, ImageDraw, ImageFilter
 import random
 
-# Base URL from frontend/.env
-BASE_URL = "https://facial-web-port.preview.emergentagent.com/api"
+BASE_URL = os.environ.get("BACKEND_URL", "http://localhost:8000/api")
 
 def create_high_quality_face(width, height):
     """Create a high-quality realistic face with proper skin tones and features"""
@@ -351,7 +351,7 @@ def main():
         print("This may indicate:")
         print("  1. Image quality/realism issues")
         print("  2. Intermittent backend issues")
-        print("  3. GPT-4o API issues")
+        print("  3. Gemini API issues")
         print("\nCheck backend logs for more details.")
     
     print(f"\n{'='*80}\n")

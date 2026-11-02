@@ -1,7 +1,6 @@
 import React, { FormEvent, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { ArrowLeft, Mail, Trash2 } from "lucide-react";
-import { api } from "@/lib/api";
 
 const SUPPORT_EMAIL = "feedback@chicshades.club";
 
@@ -16,9 +15,21 @@ export default function DeleteAccount() {
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setStatus("sending");
+    const form = event.currentTarget;
+    const formData = new FormData(form);
+    formData.set("form-name", "account-deletion");
+    const encodedData = new URLSearchParams();
+    formData.forEach((value, key) => encodedData.append(key, value.toString()));
+
     try {
-      await api.post("/account-deletion-request", { email });
+      const response = await fetch("/", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: encodedData.toString(),
+      });
+      if (!response.ok) throw new Error("Deletion request submission failed");
       setStatus("sent");
+      setEmail("");
     } catch {
       setStatus("error");
     }
@@ -50,7 +61,11 @@ export default function DeleteAccount() {
               Your request has been sent. We will follow up at the email address you provided.
             </div>
           ) : (
-            <form onSubmit={handleSubmit} className="mt-7">
+            <form name="account-deletion" method="POST" data-netlify="true" netlify-honeypot="bot-field" onSubmit={handleSubmit} className="mt-7">
+              <input type="hidden" name="form-name" value="account-deletion" />
+              <div className="hidden" aria-hidden="true">
+                <label>Leave this field empty <input name="bot-field" tabIndex={-1} autoComplete="off" /></label>
+              </div>
               <label htmlFor="account-email" className="mb-2 block text-sm font-semibold">Account email</label>
               <input
                 id="account-email"
