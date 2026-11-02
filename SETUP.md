@@ -4,9 +4,9 @@
 
 The current router publishes `/`, `/feedback`, `/privacy`, and `/delete-account`. The other app screens, including scanning and login, are not currently exposed as routes. Netlify can publish the static frontend and provide HTTPS; the backend and MongoDB must be hosted separately before account or scanning features can work.
 
-Connect this GitHub repository to a new Netlify site and deploy the `main` branch. After the first deploy, add `chicshades.club` and `www.chicshades.club` as custom domains in Netlify, then use the exact DNS records it provides in GoDaddy. Do not change MX records; those deliver your Google email.
+This repository is connected to the Netlify project `legendary-twilight-288007`, which deploys the `main` branch using `netlify.toml`. The production site is available at `https://legendary-twilight-288007.netlify.app` while the custom domain is being verified. In GoDaddy, point the root (`@`) to Netlify with an A record of `75.2.60.5` (or an ALIAS/ANAME/flattened CNAME to `apex-loadbalancer.netlify.com` if supported), and point `www` with a CNAME to `legendary-twilight-288007.netlify.app`. Leave Google MX and other email verification TXT records unchanged. Netlify will provision HTTPS after DNS propagates.
 
-Both `feedback` and `account-deletion` submissions use Netlify Forms. After the first successful deploy, enable email notifications for both forms in the Netlify site and set the recipient to `feedback@chicshades.club`. Netlify must detect the forms during a production build; local development does not deliver submissions. Submit a test on the deployed site and confirm it arrives in the inbox.
+Both `feedback` and `account-deletion` submissions use Netlify Forms. Form detection is enabled, and Netlify email notifications are configured for any form submission to `feedback@chicshades.club`. Netlify detects the forms during a production deploy; submit a test on the deployed site and confirm it arrives in the inbox.
 
 The public policy URL is `https://chicshades.club/privacy`. The account deletion request URL is `https://chicshades.club/delete-account`. Requests are sent to the inbox for manual verification and processing; they do not automatically erase account data. If users can create accounts in an app, provide an in-app way to request deletion as well and meet each store's deletion timeframe.
 

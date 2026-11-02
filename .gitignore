@@ -91,3 +91,7 @@ android-sdk/
 .ruff_cache/
 __pycache__/
 *.mp4
+
+# Local Netlify folder
+.netlify
+.agents/
