@@ -1,5 +1,6 @@
 import React, { useEffect } from "react";
 import { Link } from "react-router-dom";
+import landingImage from "@/assets/image.png";
 
 export default function TemporaryLanding() {
   useEffect(() => {
@@ -25,7 +26,7 @@ export default function TemporaryLanding() {
           className="block w-[min(88vw,420px)]"
         >
           <img
-            src="/feedback-poster.png"
+            src={landingImage}
             alt="SUSI. Scan the QR code to download the app, or get it on Google Play."
             className="block h-auto w-full"
           />
