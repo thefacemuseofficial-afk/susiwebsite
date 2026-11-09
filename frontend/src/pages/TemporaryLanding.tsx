@@ -39,6 +39,9 @@ export default function TemporaryLanding() {
         <Link to="/feedback" className="underline underline-offset-4 hover:text-foreground">
           Feedback
         </Link>
+        <Link to="/about" className="underline underline-offset-4 hover:text-foreground">
+          About SUSI
+        </Link>
         <Link to="/privacy" className="underline underline-offset-4 hover:text-foreground">
           Privacy
         </Link>
