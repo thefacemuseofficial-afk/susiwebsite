@@ -8,7 +8,7 @@ export default function TemporaryLanding() {
   }, []);
 
   return (
-    <div className="flex min-h-screen flex-col items-center px-5 pb-8 text-center text-foreground">
+    <div className="flex min-h-screen flex-col items-center bg-black px-5 pb-8 text-center text-white">
       <header className="flex w-full max-w-6xl justify-end py-5">
         <Link
           to="/feedback"
