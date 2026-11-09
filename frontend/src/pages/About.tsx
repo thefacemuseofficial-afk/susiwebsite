@@ -98,9 +98,9 @@ export default function About() {
           <div className="mx-auto flex max-w-6xl flex-col gap-3 px-5 py-12 sm:flex-row sm:items-center sm:justify-between sm:py-14">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.2em] text-background/70">More ways to match</p>
-              <h2 className="mt-2 text-3xl font-bold">susi Pro</h2>
+              <h2 className="mt-2 text-3xl font-bold">susi pro</h2>
               <p className="mt-2 max-w-2xl text-sm leading-6 text-background/80">
-                Unlock premium features with susi Pro, including enhanced matching tools and additional recommendations.
+                Unlock premium features with susi pro, including enhanced matching tools and additional recommendations.
               </p>
             </div>
             <a

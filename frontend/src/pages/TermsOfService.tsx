@@ -4,14 +4,14 @@ import { Link } from "react-router-dom";
 
 export default function TermsOfService() {
   useEffect(() => {
-    document.title = "Terms of Service — SUSI";
+    document.title = "Terms of Service — susi";
   }, []);
 
   return (
     <main className="min-h-screen px-5 py-10 text-foreground">
       <div className="mx-auto max-w-3xl">
         <Link to="/" className="inline-flex items-center gap-2 text-sm text-foreground/70 hover:text-foreground">
-          <ArrowLeft className="h-4 w-4" aria-hidden="true" /> SUSI
+          <ArrowLeft className="h-4 w-4" aria-hidden="true" /> susi
         </Link>
 
         <article className="mt-10 space-y-8">
@@ -27,7 +27,7 @@ export default function TermsOfService() {
             </section>
 
             <section className="space-y-3">
-              <h2 className="text-xl font-bold text-foreground">About SUSI</h2>
+              <h2 className="text-xl font-bold text-foreground">About susi</h2>
               <p>susi is a beauty technology service that provides makeup shade matching and cosmetic recommendations based on user-submitted information and images.</p>
             </section>
 
@@ -40,7 +40,7 @@ export default function TermsOfService() {
             <section className="space-y-3">
               <h2 className="text-xl font-bold text-foreground">User Content</h2>
               <p>You may upload photos and other information for the purpose of receiving recommendations.</p>
-              <p>You retain ownership of your content but grant SUSI permission to process it in order to provide app functionality.</p>
+              <p>You retain ownership of your content but grant susi permission to process it in order to provide app functionality.</p>
             </section>
 
             <section className="space-y-3">
@@ -91,7 +91,7 @@ export default function TermsOfService() {
         </article>
 
         <footer className="mt-10 flex flex-wrap gap-x-5 gap-y-2 border-t border-foreground/15 pt-5 text-xs text-foreground/70">
-          <Link to="/about" className="underline underline-offset-4 hover:text-foreground">About SUSI</Link>
+          <Link to="/about" className="underline underline-offset-4 hover:text-foreground">About susi</Link>
           <Link to="/privacy" className="underline underline-offset-4 hover:text-foreground">Privacy</Link>
           <Link to="/delete-account" className="underline underline-offset-4 hover:text-foreground">Delete account</Link>
         </footer>
