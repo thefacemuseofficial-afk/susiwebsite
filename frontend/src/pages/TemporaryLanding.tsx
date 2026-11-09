@@ -33,20 +33,22 @@ export default function TemporaryLanding() {
           <span className="absolute inset-x-0 top-[32%] -translate-y-1/2 text-[10px] font-medium uppercase leading-none tracking-[0.18em] text-foreground sm:text-xs sm:tracking-[0.24em]">
             Find your perfect shade
           </span>
-            href="https://play.google.com/store/apps/details?id=com.susiapp.app"
+        </a>
       </main>
       <footer className="flex w-full max-w-6xl flex-wrap items-center justify-center gap-x-6 gap-y-2 py-4 text-xs text-foreground/70">
         <Link to="/feedback" className="underline underline-offset-4 hover:text-foreground">
-            className="relative block w-[min(88vw,420px)]"
+          Feedback
         </Link>
         <Link to="/privacy" className="underline underline-offset-4 hover:text-foreground">
           Privacy
         </Link>
         <Link to="/delete-account" className="underline underline-offset-4 hover:text-foreground">
           Delete account
-            <span className="absolute inset-x-0 top-[32%] -translate-y-1/2 text-[10px] font-medium uppercase leading-none tracking-[0.18em] text-white sm:text-xs sm:tracking-[0.24em]">
-              Find your perfect shade
-            </span>
         </Link>
+        <span>© {new Date().getFullYear()} SUSI</span>
+      </footer>
+    </div>
+  );
+}
   );
 }
