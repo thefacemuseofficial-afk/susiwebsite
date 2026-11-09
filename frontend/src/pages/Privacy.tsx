@@ -52,7 +52,7 @@ export default function Privacy() {
                 <Link to="/delete-account" className="text-foreground underline underline-offset-4 hover:opacity-75">account deletion page</Link>.
                 Requests are reviewed and processed by our team; submitting a request does not delete an account immediately. Some records may be retained where required by law.
               </p>
-              <p>For privacy questions, contact <a className="text-foreground underline underline-offset-4 hover:opacity-75" href="mailto:feedback@chicshades.club">feedback@chicshades.club</a>.</p>
+              <p>For privacy questions, contact <a className="text-foreground underline underline-offset-4 hover:opacity-75" href="mailto:feedback@susiofficial.com">feedback@susiofficial.com</a>.</p>
             </section>
           </div>
         </article>

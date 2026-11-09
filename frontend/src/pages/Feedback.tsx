@@ -87,7 +87,7 @@ export default function Feedback() {
               {status === "sending" ? "Sending…" : "Send feedback"}
             </button>
             <p className="text-sm text-foreground/65">
-              You can also email <a className="underline underline-offset-4" href="mailto:feedback@chicshades.club">feedback@chicshades.club</a>.
+              You can also email <a className="underline underline-offset-4" href="mailto:feedback@susiofficial.com">feedback@susiofficial.com</a>.
             </p>
           </form>
         )}

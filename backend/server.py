@@ -22,13 +22,13 @@ ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
 
 GOOGLE_CLIENT_ID = os.environ.get("GOOGLE_CLIENT_ID", "")
-FEEDBACK_EMAIL = os.environ.get("FEEDBACK_EMAIL", "feedback@chicshades.club")
-HELP_EMAIL = os.environ.get("HELP_EMAIL", "hello@chicshadesclub")
+FEEDBACK_EMAIL = os.environ.get("FEEDBACK_EMAIL", "feedback@susiofficial.com")
+HELP_EMAIL = os.environ.get("HELP_EMAIL", "hello@susiofficial.com")
 FORM_RECIPIENTS = {
     "feedback": FEEDBACK_EMAIL,
     "help": HELP_EMAIL,
 }
-CONTACT_FROM_EMAIL = os.environ.get("CONTACT_FROM_EMAIL", "hello@chicshadesclub")
+CONTACT_FROM_EMAIL = os.environ.get("CONTACT_FROM_EMAIL", "hello@susiofficial.com")
 
 mongo_url = os.environ['MONGO_URL']
 client = AsyncIOMotorClient(mongo_url)

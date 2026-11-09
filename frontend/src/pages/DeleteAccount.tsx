@@ -2,7 +2,7 @@ import React, { FormEvent, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { ArrowLeft, Mail, Trash2 } from "lucide-react";
 
-const SUPPORT_EMAIL = "feedback@chicshades.club";
+const SUPPORT_EMAIL = "feedback@susiofficial.com";
 
 export default function DeleteAccount() {
   const [email, setEmail] = useState("");
