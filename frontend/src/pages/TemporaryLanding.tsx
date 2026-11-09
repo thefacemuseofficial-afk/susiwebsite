@@ -45,6 +45,9 @@ export default function TemporaryLanding() {
         <Link to="/privacy" className="underline underline-offset-4 hover:text-foreground">
           Privacy
         </Link>
+        <Link to="/terms-of-service" className="underline underline-offset-4 hover:text-foreground">
+          Terms of Service
+        </Link>
         <Link to="/delete-account" className="underline underline-offset-4 hover:text-foreground">
           Delete account
         </Link>

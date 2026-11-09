@@ -53,6 +53,7 @@ export default function Privacy() {
                 Requests are reviewed and processed by our team; submitting a request does not delete an account immediately. Some records may be retained where required by law.
               </p>
               <p>For privacy questions, contact <a className="text-foreground underline underline-offset-4 hover:opacity-75" href="mailto:feedback@susiofficial.com">feedback@susiofficial.com</a>.</p>
+              <p>Read our <Link to="/terms-of-service" className="text-foreground underline underline-offset-4 hover:opacity-75">Terms of Service</Link>.</p>
             </section>
           </div>
         </article>

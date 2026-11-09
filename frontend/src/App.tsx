@@ -7,12 +7,14 @@ import Feedback from "@/pages/Feedback";
 import Privacy from "@/pages/Privacy";
 import DeleteAccount from "@/pages/DeleteAccount";
 import About from "@/pages/About";
+import TermsOfService from "@/pages/TermsOfService";
 
 function AppRoutes() {
   return (
     <Routes>
       <Route path="/" element={<TemporaryLanding />} />
       <Route path="/about" element={<About />} />
+      <Route path="/terms-of-service" element={<TermsOfService />} />
       <Route path="/feedback" element={<Feedback />} />
       <Route path="/privacy" element={<Privacy />} />
       <Route path="/delete-account" element={<DeleteAccount />} />

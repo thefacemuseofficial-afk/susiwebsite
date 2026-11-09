@@ -151,6 +151,7 @@ export default function About() {
           <nav aria-label="Footer navigation" className="flex flex-wrap gap-x-5 gap-y-2">
             <Link to="/feedback" className="underline underline-offset-4 hover:text-foreground">Feedback</Link>
             <Link to="/privacy" className="underline underline-offset-4 hover:text-foreground">Privacy</Link>
+            <Link to="/terms-of-service" className="underline underline-offset-4 hover:text-foreground">Terms of Service</Link>
             <Link to="/delete-account" className="underline underline-offset-4 hover:text-foreground">Delete account</Link>
           </nav>
         </div>
