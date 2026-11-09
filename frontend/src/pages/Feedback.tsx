@@ -6,7 +6,7 @@ export default function Feedback() {
   const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
 
   useEffect(() => {
-    document.title = "Feedback — chic shades club";
+    document.title = "Feedback — SUSI";
   }, []);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
