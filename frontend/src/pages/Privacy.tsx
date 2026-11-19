@@ -27,9 +27,16 @@ export default function Privacy() {
             </section>
 
             <section className="space-y-3">
-              <h2 className="font-display text-xl font-semibold text-foreground">Skin scans and saved profiles</h2>
-              <p>When you request a skin analysis, the photo is sent to Google Gemini to estimate skin tone and related attributes, such as undertone, Fitzpatrick type, face shape, and lighting. The app saves the selected photo in local browser storage as part of your skin profile until you remove it or clear that storage. The analysis result may also be saved to your account if you are signed in; the original photo is not sent to our account database.</p>
-              <p>Saved profiles, preferences, favourites, product scan history, and subscription status may be stored on your device or associated with your account, depending on the feature you use.</p>
+              <h2 className="font-display text-xl font-semibold text-foreground">Face data in the SUSI app</h2>
+              <h3 className="font-semibold text-foreground">Collection and use</h3>
+              <p>When you grant camera access or choose a photo and submit a scan, SUSI processes the selected image. You can scan a skin area; a full-face photo is not required. The image may nevertheless include your face. SUSI uses it to estimate complexion depth (Fitzpatrick type), undertone, a representative skin colour, face shape, eye colour, lighting quality, and a confidence score. These estimates help provide personalized makeup and skin-shade recommendations. We do not use face data for advertising, identity verification, facial recognition, user tracking, or creating a biometric identity template.</p>
+
+              <h3 className="font-semibold text-foreground">Sharing and disclosure</h3>
+              <p>The image is sent over HTTPS to the SUSI backend hosted by Render. The backend sends it to Google Gemini through the Gemini API for analysis and returns the resulting attributes to your device. We do not sell face data. Google’s current terms say that prompts, images, and responses processed using Paid Services are not used to improve Google products, but may be logged for a limited period for abuse monitoring and required legal or regulatory disclosures. For Unpaid Services, Google may use submitted content and responses to improve and develop its products and machine-learning technologies. The backend code does not show which service tier the deployed Google project uses, so confirm that setting before relying on the Paid Services protections.</p>
+
+              <h3 className="font-semibold text-foreground">Storage, retention, and deletion</h3>
+              <p>The selected image is stored on your device as part of the locally saved skin profile until you clear the app’s storage or remove the app. If you are signed in, the scan’s derived profile attributes (not the image) may also be saved to your account in MongoDB. The backend keeps up to two saved skin profiles per account; saving another profile can replace the oldest one. Product-comparison history is stored separately and contains product and comparison details, not your skin colour or undertone. The app displays up to six recent entries, which you can delete individually; the backend code does not configure automatic expiration for these records.</p>
+              <p>You can delete account-saved profiles and individual comparison entries in the app. To remove the locally saved image and profile, clear the app’s storage or remove the app. The account-deletion page sends a request for manual review and processing; submitting it does not immediately delete your account or its data. Account deletion does not itself clear data stored locally on your device. Google’s processing and any limited operational retention of images are governed by the Gemini API terms and the settings that apply to the Google project used for the request.</p>
             </section>
 
             <section className="space-y-3">
@@ -46,7 +53,7 @@ export default function Privacy() {
 
             <section className="space-y-3">
               <h2 className="font-display text-xl font-semibold text-foreground">Retention and deletion</h2>
-              <p>We keep account information while your account is active and as needed for security, legal obligations, and disputes. Photos saved in local browser storage remain there until removed or the storage is cleared. Gemini and other providers handle information according to their terms and applicable service settings.</p>
+              <p>We keep account information while your account is active and as needed for security, legal obligations, and disputes. Data stored locally on your device remains there until you clear the app’s storage or remove the app. Gemini and other providers handle information according to their terms and applicable service settings.</p>
               <p>
                 Users may request deletion of their account and associated data through our{" "}
                 <Link to="/delete-account" className="text-foreground underline underline-offset-4 hover:opacity-75">account deletion page</Link>.
