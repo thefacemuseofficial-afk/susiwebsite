@@ -9,7 +9,7 @@ export default function DeleteAccount() {
   const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
 
   useEffect(() => {
-    document.title = "Request Account Deletion — SUSI";
+    document.title = "Request Account Deletion — susi";
   }, []);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -41,7 +41,7 @@ export default function DeleteAccount() {
     <main className="min-h-screen px-5 py-10 text-foreground">
       <div className="mx-auto max-w-lg">
         <Link to="/" className="inline-flex items-center gap-2 text-sm text-foreground/70 hover:text-foreground">
-          <ArrowLeft className="h-4 w-4" aria-hidden="true" /> SUSI
+          <ArrowLeft className="h-4 w-4" aria-hidden="true" /> susi
         </Link>
 
         <section className="mt-10 max-w-md">
