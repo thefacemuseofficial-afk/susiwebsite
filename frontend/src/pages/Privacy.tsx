@@ -28,15 +28,11 @@ export default function Privacy() {
 
             <section className="space-y-3">
               <h2 className="font-display text-xl font-semibold text-foreground">Face data in the susi app</h2>
-              <h3 className="font-semibold text-foreground">Collection and use</h3>
-              <p>When you grant camera access or choose a photo and submit a scan, susi processes the selected image. You can scan a skin area; a full-face photo is not required. The image may nevertheless include your face. susi uses it to estimate complexion depth (Fitzpatrick type), undertone, a representative skin colour, face shape, eye colour, lighting quality, and a confidence score. These estimates help provide personalized makeup and skin-shade recommendations. We do not use face data for advertising, identity verification, facial recognition, user tracking, or creating a biometric identity template.</p>
-
-              <h3 className="font-semibold text-foreground">Sharing and disclosure</h3>
-              <p>The image is sent over HTTPS to the susi backend hosted by Render. The backend sends it to Google Gemini through the paid Gemini API for analysis and returns the resulting attributes to your device. We do not sell face data or opt in to using Gemini API data to improve Google’s models. Under Google’s Paid Services terms, prompts, images, and responses are not used to improve Google products. Google may log them for a limited period solely for abuse monitoring and required legal or regulatory disclosures.</p>
-
-              <h3 className="font-semibold text-foreground">Storage, retention, and deletion</h3>
-              <p>The selected image is stored on your device as part of the locally saved skin profile until you clear the app’s storage or remove the app. If you are signed in, the scan’s derived profile attributes (not the image) may also be saved to your account in MongoDB. The backend keeps up to two saved skin profiles per account; saving another profile can replace the oldest one. Product-comparison history is stored separately and contains product and comparison details, not your skin colour or undertone. The app displays up to six recent entries, which you can delete individually; the backend code does not configure automatic expiration for these records.</p>
-              <p>You can delete account-saved profiles and individual comparison entries in the app. To remove the locally saved image and profile, clear the app’s storage or remove the app. The account-deletion page sends a request for manual review and processing; submitting it does not immediately delete your account or its data. Account deletion does not itself clear data stored locally on your device. Google’s processing and any limited operational retention of images are governed by the Gemini API terms and the settings that apply to the Google project used for the request.</p>
+              <p>When you submit a skin scan, susi captures a photo using your device’s camera. We use it to estimate your skin colour, complexion depth, undertone, face shape, eye colour when visible, and lighting quality, to provide personalized makeup recommendations.</p>
+              <p>The photo is sent securely through our backend hosted by Render to Google Gemini for analysis. Google handles the information under its terms and our project settings. We do not intentionally save scan photos in our backend database.</p>
+              <p>After a successful analysis, the app deletes the original and resized local photo files before saving your results. If a scan is interrupted or deletion fails, temporary files may remain. Photos from earlier app versions may also remain on the device.</p>
+              <p>Your current skin profile and up to two scan-history entries are stored on your device without a fixed expiry. Clearing scan history does not remove the current profile. If you are signed in and compare a product, your estimated skin colour and undertone are saved with the comparison in our MongoDB database. You can delete comparison entries individually.</p>
+              <p>You can delete your account directly in the app, which removes associated backend records and clears profile and history records on that device. This does not explicitly delete photos left by earlier or interrupted scans. You may also submit a deletion request through our website’s <Link to="/delete-account" className="text-foreground underline underline-offset-4 hover:opacity-75">account-deletion page</Link>.</p>
             </section>
 
             <section className="space-y-3">
@@ -53,12 +49,7 @@ export default function Privacy() {
 
             <section className="space-y-3">
               <h2 className="font-display text-xl font-semibold text-foreground">Retention and deletion</h2>
-              <p>We keep account information while your account is active and as needed for security, legal obligations, and disputes. Data stored locally on your device remains there until you clear the app’s storage or remove the app. Gemini and other providers handle information according to their terms and applicable service settings.</p>
-              <p>
-                Users may request deletion of their account and associated data through our{" "}
-                <Link to="/delete-account" className="text-foreground underline underline-offset-4 hover:opacity-75">account deletion page</Link>.
-                Requests are reviewed and processed by our team; submitting a request does not delete an account immediately. Some records may be retained where required by law.
-              </p>
+              <p>We keep account information while your account is active and as needed for security, legal obligations, and disputes. Some records may be retained where required by law.</p>
               <p>For privacy questions, contact <a className="text-foreground underline underline-offset-4 hover:opacity-75" href="mailto:feedback@susiofficial.com">feedback@susiofficial.com</a>.</p>
               <p>Read our <Link to="/terms-of-service" className="text-foreground underline underline-offset-4 hover:opacity-75">Terms of Service</Link>.</p>
             </section>
